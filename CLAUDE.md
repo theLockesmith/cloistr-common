@@ -15,6 +15,7 @@
 This library provides shared functionality for all Cloistr services. Currently includes:
 
 - **relayprefs** - Relay preference discovery (kind:30078 cloistr-relays)
+- **platform** - Unified access control, quota management, and usage tracking
 
 ## Design Philosophy
 
@@ -98,6 +99,89 @@ prefs, _ := client.GetRelayPrefs(ctx, pubkey)
 
 See `~/claude/coldforge/cloistr/architecture/relay-preferences.md` for full integration guide.
 
+## Package: platform
+
+Provides unified access control, quota management, and usage tracking for Cloistr services. Supports both platform mode (shared PostgreSQL) and standalone mode (config-based).
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `config.go` | Config struct, environment variable parsing, Client type |
+| `errors.go` | Error definitions |
+| `access.go` | HasAccess, IsAdmin functions |
+| `quota.go` | GetQuota, CheckQuota, RecordUsage functions |
+
+### Modes
+
+**Platform Mode:** Services connect to the shared PostgreSQL database at `postgres-rw.db.coldforge.xyz`. Access control uses the `has_service_access()` function, quotas use the `user_quotas` table.
+
+**Standalone Mode:** Services use environment variables and config files. No database required - useful for self-hosted deployments and open source users.
+
+### Environment Variables
+
+```bash
+# Mode selection
+CLOISTR_MODE=platform  # or "standalone"
+
+# Platform mode
+DATABASE_URL=postgres://user:pass@postgres-rw.db.coldforge.xyz:5432/cloistr
+SERVICE_ID=blossom
+
+# Standalone mode
+WHITELIST_PUBKEYS=pubkey1,pubkey2
+WHITELIST_ALLOW_ALL=false
+ADMIN_PUBKEYS=adminpubkey1
+STORAGE_QUOTA_BYTES=10737418240  # 10GB
+SIGNING_REQUESTS_MAX=1000
+```
+
+### Usage
+
+```go
+import "git.coldforge.xyz/coldforge/cloistr-common/platform"
+
+// Create client from environment
+client, err := platform.NewClientFromEnv()
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
+
+// Check access
+hasAccess, err := client.HasAccess(ctx, pubkey)
+
+// Check quota before upload
+if err := client.RequireQuota(ctx, pubkey, platform.QuotaTypeStorageBytes, fileSize); err != nil {
+    return err // quota exceeded
+}
+
+// Record usage after successful operation
+client.RecordUsage(ctx, pubkey, platform.QuotaTypeStorageBytes, fileSize)
+
+// Check admin status
+if isAdmin, _ := client.IsAdmin(ctx, pubkey); isAdmin {
+    // allow admin operation
+}
+```
+
+### Key Functions
+
+| Function | Description |
+|----------|-------------|
+| `HasAccess(ctx, pubkey)` | Check if user can access current service |
+| `HasAccessToService(ctx, pubkey, serviceID)` | Check access to any service |
+| `RequireAccess(ctx, pubkey)` | Returns error if access denied |
+| `IsAdmin(ctx, pubkey)` | Check if user is admin |
+| `RequireAdmin(ctx, pubkey)` | Returns error if not admin |
+| `GetQuota(ctx, pubkey, quotaType)` | Get quota info |
+| `CheckQuota(ctx, pubkey, quotaType, amount)` | Check if quota available |
+| `RequireQuota(ctx, pubkey, quotaType, amount)` | Returns error if quota exceeded |
+| `RecordUsage(ctx, pubkey, quotaType, amount)` | Record usage |
+| `ReleaseUsage(ctx, pubkey, quotaType, amount)` | Release usage (e.g., on delete) |
+
+See `~/claude/coldforge/cloistr/schemas/SERVICE-INTEGRATION.md` for full integration patterns.
+
 ---
 
-**Last Updated:** 2026-03-01
+**Last Updated:** 2026-03-05
