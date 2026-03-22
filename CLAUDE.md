@@ -16,6 +16,7 @@ This library provides shared functionality for all Cloistr services. Currently i
 
 - **relayprefs** - Relay preference discovery (kind:30078 cloistr-relays)
 - **platform** - Unified access control, quota management, and usage tracking
+- **errors** - Standardized API error types (potato-grade format)
 
 ## Design Philosophy
 
@@ -194,6 +195,70 @@ if isAdmin, _ := client.IsAdmin(ctx, pubkey); isAdmin {
 
 See `~/claude/coldforge/cloistr/schemas/SERVICE-INTEGRATION.md` for full integration patterns.
 
+## Package: errors
+
+Standardized API error types following the potato-grade design format. **All Cloistr services must use this package for API error responses.**
+
+### Error Format
+
+```json
+{
+  "code": "STORAGE_TIMEOUT",
+  "message": "Upload timed out after 30s",
+  "retry_after": 60,
+  "debug": {"timeout_at": "write_chunk_3"}
+}
+```
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `errors.go` | APIError type and constructors |
+| `codes.go` | Standard error codes |
+
+### Usage
+
+```go
+import "git.coldforge.xyz/coldforge/cloistr-common/errors"
+
+// Use pre-built errors
+if !hasAccess {
+    errors.ErrAccessDenied.WriteResponse(w)
+    return
+}
+
+// Create custom errors
+err := errors.BadRequest(errors.CodeInvalidInput, "invalid pubkey format").
+    WithDebug("pubkey", pubkey)
+err.WriteResponse(w)
+
+// With retry guidance
+err := errors.TooManyRequests(errors.CodeRateLimitExceeded, "rate limit exceeded", 60)
+err.WriteResponse(w)
+```
+
+### Standard Error Codes
+
+| Category | Codes |
+|----------|-------|
+| Auth | `AUTH_REQUIRED`, `AUTH_INVALID`, `ACCESS_DENIED`, `NOT_ADMIN` |
+| Quota | `QUOTA_EXCEEDED`, `STORAGE_FULL`, `RATE_LIMIT_EXCEEDED` |
+| Resource | `RESOURCE_NOT_FOUND`, `RESOURCE_EXISTS`, `RESOURCE_CONFLICT` |
+| Storage | `STORAGE_TIMEOUT`, `STORAGE_ERROR`, `UPLOAD_FAILED` |
+| Validation | `VALIDATION_FAILED`, `INVALID_INPUT`, `INVALID_PUBKEY` |
+| Service | `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR` |
+
+### Pre-built Errors
+
+| Variable | Code | HTTP Status |
+|----------|------|-------------|
+| `ErrAuthRequired` | AUTH_REQUIRED | 401 |
+| `ErrAccessDenied` | ACCESS_DENIED | 403 |
+| `ErrQuotaExceeded` | QUOTA_EXCEEDED | 507 |
+| `ErrResourceNotFound` | RESOURCE_NOT_FOUND | 404 |
+| `ErrInternalError` | INTERNAL_ERROR | 500 |
+
 ---
 
-**Last Updated:** 2026-03-05
+**Last Updated:** 2026-03-22

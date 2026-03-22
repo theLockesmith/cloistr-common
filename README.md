@@ -148,6 +148,50 @@ Configure via environment variables:
 | `QuotaTypeSigningRequestsDaily` | Signing requests per day |
 | `QuotaTypeEmailStorageBytes` | Email storage in bytes |
 
+### errors
+
+Standardized API error types following the potato-grade design format. All error responses include a machine-readable code, human-readable message, and optional retry guidance.
+
+#### Usage
+
+```go
+import "git.coldforge.xyz/coldforge/cloistr-common/errors"
+
+// Use pre-built errors
+if !hasAccess {
+    errors.ErrAccessDenied.WriteResponse(w)
+    return
+}
+
+// Create custom errors with debug info
+err := errors.BadRequest(errors.CodeInvalidInput, "invalid pubkey format").
+    WithDebug("pubkey", pubkey)
+err.WriteResponse(w)
+
+// Rate limiting with retry guidance
+err := errors.TooManyRequests(errors.CodeRateLimitExceeded, "rate limit exceeded", 60)
+err.WriteResponse(w)
+```
+
+#### Response Format
+
+```json
+{
+  "code": "STORAGE_TIMEOUT",
+  "message": "Upload timed out after 30s",
+  "retry_after": 60,
+  "debug": {"timeout_at": "write_chunk_3"}
+}
+```
+
+#### Standard Error Codes
+
+- **Auth:** `AUTH_REQUIRED`, `AUTH_INVALID`, `ACCESS_DENIED`, `NOT_ADMIN`
+- **Quota:** `QUOTA_EXCEEDED`, `STORAGE_FULL`, `RATE_LIMIT_EXCEEDED`
+- **Resource:** `RESOURCE_NOT_FOUND`, `RESOURCE_EXISTS`, `RESOURCE_CONFLICT`
+- **Storage:** `STORAGE_TIMEOUT`, `STORAGE_ERROR`, `UPLOAD_FAILED`
+- **Validation:** `VALIDATION_FAILED`, `INVALID_INPUT`, `INVALID_PUBKEY`
+
 ## License
 
 AGPL-3.0
