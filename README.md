@@ -74,6 +74,80 @@ export RELAY_LIST=wss://my-relay.com
 export USE_CLOISTR_FALLBACK=false
 ```
 
+### platform
+
+Unified access control, quota management, and usage tracking for Cloistr services. Supports both platform mode (shared PostgreSQL) and standalone mode (config-based).
+
+#### Installation
+
+```bash
+go get git.coldforge.xyz/coldforge/cloistr-common
+```
+
+**Important:** In platform mode, you must import a PostgreSQL driver in your service:
+
+```go
+import _ "github.com/lib/pq" // or github.com/jackc/pgx/v5/stdlib
+```
+
+#### Usage
+
+```go
+import "git.coldforge.xyz/coldforge/cloistr-common/platform"
+
+// Create client from environment variables
+client, err := platform.NewClientFromEnv()
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
+
+// Check access
+if err := client.RequireAccess(ctx, pubkey); err != nil {
+    return err // access denied
+}
+
+// Check quota before upload
+if err := client.RequireQuota(ctx, pubkey, platform.QuotaTypeStorageBytes, fileSize); err != nil {
+    return err // quota exceeded
+}
+
+// Record usage after successful operation
+client.RecordUsage(ctx, pubkey, platform.QuotaTypeStorageBytes, fileSize)
+
+// Release usage on delete
+client.ReleaseUsage(ctx, pubkey, platform.QuotaTypeStorageBytes, fileSize)
+```
+
+#### Configuration
+
+Configure via environment variables:
+
+| Variable | Purpose | Mode |
+|----------|---------|------|
+| `CLOISTR_MODE` | `platform` or `standalone` | Both |
+| `SERVICE_ID` | Service identifier (e.g., `blossom`) | Both |
+| `DATABASE_URL` | PostgreSQL connection string | Platform |
+| `WHITELIST_PUBKEYS` | Comma-separated allowed pubkeys | Standalone |
+| `WHITELIST_ALLOW_ALL` | Allow all pubkeys (`true`/`false`) | Standalone |
+| `ADMIN_PUBKEYS` | Comma-separated admin pubkeys | Standalone |
+| `STORAGE_QUOTA_BYTES` | Per-user storage quota | Standalone |
+| `SIGNING_REQUESTS_MAX` | Max signing requests per day | Standalone |
+
+#### Modes
+
+**Platform Mode:** Queries the shared PostgreSQL database for access control and quotas. Requires `DATABASE_URL` and uses the `has_service_access()` and `get_user_quota()` database functions.
+
+**Standalone Mode:** Uses environment variables for configuration. Useful for self-hosted deployments without the full platform infrastructure.
+
+#### Quota Types
+
+| Constant | Description |
+|----------|-------------|
+| `QuotaTypeStorageBytes` | Storage space in bytes |
+| `QuotaTypeSigningRequestsDaily` | Signing requests per day |
+| `QuotaTypeEmailStorageBytes` | Email storage in bytes |
+
 ## License
 
 AGPL-3.0

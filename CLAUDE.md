@@ -136,6 +136,18 @@ STORAGE_QUOTA_BYTES=10737418240  # 10GB
 SIGNING_REQUESTS_MAX=1000
 ```
 
+### Important: PostgreSQL Driver
+
+The platform package uses `database/sql` but does **not** import a driver. Services using platform mode must import a PostgreSQL driver:
+
+```go
+import _ "github.com/lib/pq"
+// or
+import _ "github.com/jackc/pgx/v5/stdlib"
+```
+
+This is intentional - it allows services to choose their preferred driver and avoids pulling unnecessary dependencies in standalone mode.
+
 ### Usage
 
 ```go
