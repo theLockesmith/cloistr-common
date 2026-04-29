@@ -133,3 +133,20 @@ func ServiceUnavailable(code, message string, retryAfter int) *APIError {
 func InsufficientStorage(code, message string) *APIError {
 	return New(code, message, http.StatusInsufficientStorage)
 }
+
+// StatusAndBody returns the HTTP status code and the error itself for use
+// with frameworks like Gin. Usage: ctx.JSON(err.StatusAndBody())
+func (e *APIError) StatusAndBody() (int, *APIError) {
+	return e.HTTPStatus, e
+}
+
+// Abort writes the error and aborts the request. For use with Gin:
+// err.Abort(ctx) is equivalent to ctx.AbortWithStatusJSON(err.StatusAndBody())
+// The ctx parameter must have AbortWithStatusJSON(int, any) method.
+type GinContext interface {
+	AbortWithStatusJSON(code int, jsonObj any)
+}
+
+func (e *APIError) Abort(ctx GinContext) {
+	ctx.AbortWithStatusJSON(e.HTTPStatus, e)
+}
