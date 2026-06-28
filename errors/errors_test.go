@@ -104,6 +104,80 @@ func TestAPIError_WriteResponse(t *testing.T) {
 	}
 }
 
+func TestAPIError_WriteResponse_RetryAfterHeader(t *testing.T) {
+	err := ServiceUnavailable("BUSY", "try later", 60)
+
+	rr := httptest.NewRecorder()
+	err.WriteResponse(rr)
+
+	if got := rr.Header().Get("Retry-After"); got != "60" {
+		t.Errorf("Retry-After = %q, want %q (regression: string(rune(n)) emits garbage)", got, "60")
+	}
+}
+
+func TestAPIError_WriteResponse_NoRetryAfterWhenZero(t *testing.T) {
+	err := New("TEST", "msg", http.StatusBadRequest) // RetryAfter == 0
+
+	rr := httptest.NewRecorder()
+	err.WriteResponse(rr)
+
+	if _, ok := rr.Header()["Retry-After"]; ok {
+		t.Error("Retry-After header should be absent when RetryAfter == 0")
+	}
+}
+
+// fakeGinContext records what Abort does so we can assert both the body and header.
+type fakeGinContext struct {
+	headers    map[string]string
+	abortCode  int
+	abortBody  any
+	aborted    bool
+}
+
+func (f *fakeGinContext) Header(key, value string) {
+	if f.headers == nil {
+		f.headers = map[string]string{}
+	}
+	f.headers[key] = value
+}
+
+func (f *fakeGinContext) AbortWithStatusJSON(code int, jsonObj any) {
+	f.aborted = true
+	f.abortCode = code
+	f.abortBody = jsonObj
+}
+
+func TestAPIError_Abort_SetsRetryAfterHeader(t *testing.T) {
+	err := TooManyRequests("RATE_LIMIT", "slow down", 120)
+
+	ctx := &fakeGinContext{}
+	err.Abort(ctx)
+
+	if !ctx.aborted {
+		t.Fatal("Abort did not call AbortWithStatusJSON")
+	}
+	if ctx.abortCode != http.StatusTooManyRequests {
+		t.Errorf("abort code = %d, want %d", ctx.abortCode, http.StatusTooManyRequests)
+	}
+	if got := ctx.headers["Retry-After"]; got != "120" {
+		t.Errorf("Retry-After = %q, want %q", got, "120")
+	}
+	if ctx.abortBody != err {
+		t.Errorf("abort body = %v, want the APIError itself", ctx.abortBody)
+	}
+}
+
+func TestAPIError_Abort_NoRetryAfterWhenZero(t *testing.T) {
+	err := BadRequest("BAD", "nope") // RetryAfter == 0
+
+	ctx := &fakeGinContext{}
+	err.Abort(ctx)
+
+	if _, ok := ctx.headers["Retry-After"]; ok {
+		t.Error("Retry-After header should be absent when RetryAfter == 0")
+	}
+}
+
 func TestErrorConstructors(t *testing.T) {
 	tests := []struct {
 		name       string

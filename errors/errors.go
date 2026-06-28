@@ -19,6 +19,7 @@ package errors
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 )
 
 // APIError represents a standardized API error response.
@@ -72,7 +73,10 @@ func (e *APIError) JSON() []byte {
 func (e *APIError) WriteResponse(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	if e.RetryAfter > 0 {
-		w.Header().Set("Retry-After", string(rune(e.RetryAfter)))
+		// Retry-After is delta-seconds: a decimal integer (RFC 7231 §7.1.3).
+		// strconv.Itoa — NOT string(rune(n)), which encodes n as a Unicode
+		// code point and emits a garbage/invalid header value.
+		w.Header().Set("Retry-After", strconv.Itoa(e.RetryAfter))
 	}
 	w.WriteHeader(e.HTTPStatus)
 	w.Write(e.JSON())
@@ -141,12 +145,18 @@ func (e *APIError) StatusAndBody() (int, *APIError) {
 }
 
 // Abort writes the error and aborts the request. For use with Gin:
-// err.Abort(ctx) is equivalent to ctx.AbortWithStatusJSON(err.StatusAndBody())
-// The ctx parameter must have AbortWithStatusJSON(int, any) method.
+// err.Abort(ctx) is equivalent to ctx.AbortWithStatusJSON(err.StatusAndBody()),
+// plus it sets the standard Retry-After HTTP header when RetryAfter > 0 so that
+// generic clients and proxies honor backoff (the JSON body alone is not enough).
+// *gin.Context satisfies this interface (it has both Header and AbortWithStatusJSON).
 type GinContext interface {
+	Header(key, value string)
 	AbortWithStatusJSON(code int, jsonObj any)
 }
 
 func (e *APIError) Abort(ctx GinContext) {
+	if e.RetryAfter > 0 {
+		ctx.Header("Retry-After", strconv.Itoa(e.RetryAfter))
+	}
 	ctx.AbortWithStatusJSON(e.HTTPStatus, e)
 }
