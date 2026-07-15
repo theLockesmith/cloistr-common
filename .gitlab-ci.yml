@@ -13,10 +13,11 @@ variables:
 
 test:
   stage: test
-  image: golang:${GO_VERSION}-alpine
+  image: golang:${GO_VERSION}
   <<: *go-cache
   variables:
     GOPATH: ${CI_PROJECT_DIR}/.go
+    CGO_ENABLED: "1"
   before_script:
     - for i in 1 2 3 4 5; do apk add --no-cache git && break || echo "Attempt $i failed, retrying in 5s..." && sleep 5; done
     - |
