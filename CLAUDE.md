@@ -6,7 +6,7 @@
 
 - **Company:** Coldforge
 - **Type:** Go Library
-- **Repository:** `git.coldforge.xyz/coldforge/cloistr-common`
+- **Repository:** `git.aegis-hq.xyz/coldforge/cloistr-common`
 
 **Parent Rules:** See [Coldforge CLAUDE.md](~/claude/coldforge/CLAUDE.md) and [global CLAUDE.md](~/claude/CLAUDE.md).
 
@@ -92,7 +92,7 @@ go mod tidy
 Services import this library:
 
 ```go
-import "git.coldforge.xyz/coldforge/cloistr-common/relayprefs"
+import "git.aegis-hq.xyz/coldforge/cloistr-common/relayprefs"
 
 client := relayprefs.NewClientFromEnv()
 prefs, _ := client.GetRelayPrefs(ctx, pubkey)
@@ -152,7 +152,7 @@ This is intentional - it allows services to choose their preferred driver and av
 ### Usage
 
 ```go
-import "git.coldforge.xyz/coldforge/cloistr-common/platform"
+import "git.aegis-hq.xyz/coldforge/cloistr-common/platform"
 
 // Create client from environment
 client, err := platform.NewClientFromEnv()
@@ -220,7 +220,7 @@ Standardized API error types following the potato-grade design format. **All Clo
 ### Usage
 
 ```go
-import "git.coldforge.xyz/coldforge/cloistr-common/errors"
+import "git.aegis-hq.xyz/coldforge/cloistr-common/errors"
 
 // Use pre-built errors
 if !hasAccess {

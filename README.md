@@ -11,13 +11,13 @@ Relay preference discovery for Cloistr services. Users store their relay prefere
 #### Installation
 
 ```bash
-go get git.coldforge.xyz/coldforge/cloistr-common
+go get git.aegis-hq.xyz/coldforge/cloistr-common
 ```
 
 #### Usage
 
 ```go
-import "git.coldforge.xyz/coldforge/cloistr-common/relayprefs"
+import "git.aegis-hq.xyz/coldforge/cloistr-common/relayprefs"
 
 // Create client from environment variables
 client := relayprefs.NewClientFromEnv()
@@ -81,7 +81,7 @@ Unified access control, quota management, and usage tracking for Cloistr service
 #### Installation
 
 ```bash
-go get git.coldforge.xyz/coldforge/cloistr-common
+go get git.aegis-hq.xyz/coldforge/cloistr-common
 ```
 
 **Important:** In platform mode, you must import a PostgreSQL driver in your service:
@@ -93,7 +93,7 @@ import _ "github.com/lib/pq" // or github.com/jackc/pgx/v5/stdlib
 #### Usage
 
 ```go
-import "git.coldforge.xyz/coldforge/cloistr-common/platform"
+import "git.aegis-hq.xyz/coldforge/cloistr-common/platform"
 
 // Create client from environment variables
 client, err := platform.NewClientFromEnv()
@@ -155,7 +155,7 @@ Standardized API error types following the potato-grade design format. All error
 #### Usage
 
 ```go
-import "git.coldforge.xyz/coldforge/cloistr-common/errors"
+import "git.aegis-hq.xyz/coldforge/cloistr-common/errors"
 
 // Use pre-built errors
 if !hasAccess {

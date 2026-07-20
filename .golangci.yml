@@ -16,7 +16,7 @@ linters:
 
 linters-settings:
   goimports:
-    local-prefixes: git.coldforge.xyz/coldforge
+    local-prefixes: git.aegis-hq.xyz/coldforge
 
 issues:
   exclude-use-default: false
