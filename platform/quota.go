@@ -20,10 +20,13 @@ func (q QuotaInfo) Unlimited() bool {
 }
 
 // Standard quota type IDs (must match database).
+//
+// Storage is a single pool shared across every storage-consuming service (blossom,
+// drive, photos, documents, vault, tasks, calendar, and email) — there is no separate
+// email storage quota; email usage is recorded against storage_bytes with service='email'.
 const (
 	QuotaTypeStorageBytes         = "storage_bytes"
 	QuotaTypeSigningRequestsDaily = "signing_requests_daily"
-	QuotaTypeEmailStorageBytes    = "email_storage_bytes"
 )
 
 // standaloneUsage tracks usage in standalone mode (in-memory).
@@ -40,29 +43,30 @@ func (c *Client) GetQuota(ctx context.Context, pubkey string, quotaType string) 
 	return c.getQuotaPlatform(ctx, pubkey, quotaType)
 }
 
-// getQuotaPlatform retrieves quota from the database.
+// getQuotaPlatform retrieves quota from the database via effective_quota(), which
+// resolves the identity-scaled limit (anonymous vs named vs per-user override) plus
+// any non-expired top-up grants, minus the SUM of per-service usage in user_quota_usage.
+// A Limit of 0 means unlimited (see QuotaInfo.Unlimited()).
 func (c *Client) getQuotaPlatform(ctx context.Context, pubkey string, quotaType string) (*QuotaInfo, error) {
 	var limit, usage, remaining int64
-	var isTenant bool
 
 	err := c.db.QueryRowContext(ctx,
-		"SELECT quota_limit, current_usage, remaining, is_tenant_quota FROM get_user_quota($1, $2)",
+		"SELECT quota_limit, current_usage, remaining FROM effective_quota($1, $2)",
 		pubkey, quotaType,
-	).Scan(&limit, &usage, &remaining, &isTenant)
+	).Scan(&limit, &usage, &remaining)
 
 	if err == sql.ErrNoRows {
-		// No quota record means unlimited
-		return &QuotaInfo{Limit: 0, CurrentUsage: 0, Remaining: 0, IsTenantQuota: false}, nil
+		// effective_quota always returns exactly one row; treat an empty result as unlimited.
+		return &QuotaInfo{}, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	return &QuotaInfo{
-		Limit:         limit,
-		CurrentUsage:  usage,
-		Remaining:     remaining,
-		IsTenantQuota: isTenant,
+		Limit:        limit,
+		CurrentUsage: usage,
+		Remaining:    remaining,
 	}, nil
 }
 
@@ -142,39 +146,23 @@ func (c *Client) RecordUsage(ctx context.Context, pubkey string, quotaType strin
 	return c.recordUsagePlatform(ctx, pubkey, quotaType, amount)
 }
 
-// recordUsagePlatform records usage in the database.
+// recordUsagePlatform records this service's usage component in user_quota_usage.
+// Usage is tracked per (pubkey, quota_type, service); the user's total usage is the
+// SUM across services (see effective_quota()). The delta is additive and clamped at 0
+// so a decrement (release) never drives a component negative. A single UPSERT — no
+// transaction needed.
+//
+// NOTE: the pubkey must already have a users row (FK on user_quota_usage). Services
+// route auth through cloistr-me, which auto-provisions the users row on first touch.
 func (c *Client) recordUsagePlatform(ctx context.Context, pubkey string, quotaType string, amount int64) error {
-	tx, err := c.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	// Insert usage record
-	_, err = tx.ExecContext(ctx, `
-		INSERT INTO usage_records (pubkey, quota_type_id, service_id, amount)
-		VALUES ($1, $2, $3, $4)
+	_, err := c.db.ExecContext(ctx, `
+		INSERT INTO user_quota_usage (pubkey, quota_type_id, service, bytes, updated_at)
+		VALUES ($1, $2, $3, GREATEST(0, $4::BIGINT), NOW())
+		ON CONFLICT (pubkey, quota_type_id, service) DO UPDATE
+		SET bytes = GREATEST(0, user_quota_usage.bytes + $4::BIGINT),
+		    updated_at = NOW()
 	`, pubkey, quotaType, c.config.ServiceID, amount)
-	if err != nil {
-		return err
-	}
-
-	// Update current usage in user_quotas
-	// First ensure the quota record exists
-	_, err = tx.ExecContext(ctx, `
-		INSERT INTO user_quotas (pubkey, quota_type_id, quota_limit, current_usage)
-		SELECT $1, $2, COALESCE(
-			(SELECT default_limit FROM quota_types WHERE id = $2), 0
-		), $3
-		ON CONFLICT (pubkey, quota_type_id) DO UPDATE
-		SET current_usage = user_quotas.current_usage + $3,
-		    last_updated = NOW()
-	`, pubkey, quotaType, amount)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	return err
 }
 
 // recordUsageStandalone records usage in memory.
