@@ -9,16 +9,6 @@ include:
     ref: main
     file: '/templates/go-test.yml'
 
-variables:
-  GO_VERSION: "1.25"
-  GIT_STRATEGY: none
-
-.go-cache: &go-cache
-  cache:
-    key: ${CI_COMMIT_REF_SLUG}-go
-    paths:
-      - .go/pkg/mod/
-
 test:
   extends: [.go-test, .cloistr-rules]
 
