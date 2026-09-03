@@ -3,22 +3,35 @@ version: "2"
 run:
   timeout: 5m
 
+# golangci-lint v2 split the old single `linters` block in two: `linters` for
+# analysis linters, `formatters` for formatting checks. Listing gofmt/goimports
+# under `linters` (the v1 shape) is now a hard error:
+#
+#   Error: can't load config: gofmt is a formatter
+#
+# gosimple's checks were folded into staticcheck in v2, so it is no longer a
+# separate linter name.
 linters:
+  default: none
   enable:
     - errcheck
     - govet
     - staticcheck
     - unused
     - ineffassign
-    - gosimple
+
+formatters:
+  enable:
     - gofmt
     - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - git.aegis-hq.xyz/coldforge
 
-linters-settings:
-  goimports:
-    local-prefixes: git.aegis-hq.xyz/coldforge
-
+# No `exclusions` block, matching the old `exclude-use-default: false`: v1's
+# default exclude patterns are opt-in presets in v2 (linters.exclusions.presets),
+# and leaving them unset means none apply, same as before.
 issues:
-  exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
