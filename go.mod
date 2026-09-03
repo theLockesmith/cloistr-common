@@ -1,6 +1,6 @@
 module git.aegis-hq.xyz/coldforge/cloistr-common
 
-go 1.27.0
+go 1.26.6
 
 require github.com/nbd-wtf/go-nostr v0.52.3
 
