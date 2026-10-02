@@ -44,7 +44,7 @@ func TestRelayPrefs_WriteRelays(t *testing.T) {
 	}
 
 	expected := map[string]bool{
-		"wss://read-write.com":  true,
+		"wss://read-write.com": true,
 		"wss://write-only.com": true,
 	}
 	for _, r := range writeRelays {

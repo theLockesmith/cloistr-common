@@ -35,7 +35,7 @@ func queryDiscovery(ctx context.Context, baseURL, pubkey string) (*RelayPrefs, e
 	if err != nil {
 		return nil, fmt.Errorf("making request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		// No preferences found - not an error, just no data

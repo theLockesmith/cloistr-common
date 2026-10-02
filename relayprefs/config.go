@@ -90,9 +90,7 @@ func (c *Config) HasQuerySources() bool {
 // Validate checks the configuration and returns any issues.
 // Currently just ensures we have at least one way to query preferences.
 func (c *Config) Validate() error {
-	if !c.HasQuerySources() && !c.UseCloistrFallback {
-		// No query sources and Cloistr fallback disabled - nothing to query
-		// This is allowed but will always return defaults
-	}
+	// No query sources with Cloistr fallback disabled is allowed: there is
+	// nothing to query, so lookups always return the config defaults.
 	return nil
 }
