@@ -128,10 +128,10 @@ func TestAPIError_WriteResponse_NoRetryAfterWhenZero(t *testing.T) {
 
 // fakeGinContext records what Abort does so we can assert both the body and header.
 type fakeGinContext struct {
-	headers    map[string]string
-	abortCode  int
-	abortBody  any
-	aborted    bool
+	headers   map[string]string
+	abortCode int
+	abortBody any
+	aborted   bool
 }
 
 func (f *fakeGinContext) Header(key, value string) {

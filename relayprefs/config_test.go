@@ -1,32 +1,17 @@
 package relayprefs
 
 import (
-	"os"
 	"testing"
 	"time"
 )
 
 func TestConfigFromEnv(t *testing.T) {
-	// Save and restore env
-	origInternal := os.Getenv("DISCOVERY_INTERNAL")
-	origRelayList := os.Getenv("RELAY_LIST")
-	origExternal := os.Getenv("DISCOVERY_EXTERNAL")
-	origFallback := os.Getenv("USE_CLOISTR_FALLBACK")
-	origTTL := os.Getenv("RELAY_PREFS_CACHE_TTL")
-	defer func() {
-		os.Setenv("DISCOVERY_INTERNAL", origInternal)
-		os.Setenv("RELAY_LIST", origRelayList)
-		os.Setenv("DISCOVERY_EXTERNAL", origExternal)
-		os.Setenv("USE_CLOISTR_FALLBACK", origFallback)
-		os.Setenv("RELAY_PREFS_CACHE_TTL", origTTL)
-	}()
-
 	// Test with all env vars set
-	os.Setenv("DISCOVERY_INTERNAL", "http://internal:8080")
-	os.Setenv("RELAY_LIST", "wss://relay1.com, wss://relay2.com")
-	os.Setenv("DISCOVERY_EXTERNAL", "http://external:8080")
-	os.Setenv("USE_CLOISTR_FALLBACK", "false")
-	os.Setenv("RELAY_PREFS_CACHE_TTL", "30m")
+	t.Setenv("DISCOVERY_INTERNAL", "http://internal:8080")
+	t.Setenv("RELAY_LIST", "wss://relay1.com, wss://relay2.com")
+	t.Setenv("DISCOVERY_EXTERNAL", "http://external:8080")
+	t.Setenv("USE_CLOISTR_FALLBACK", "false")
+	t.Setenv("RELAY_PREFS_CACHE_TTL", "30m")
 
 	cfg := ConfigFromEnv()
 
@@ -55,12 +40,12 @@ func TestConfigFromEnv(t *testing.T) {
 }
 
 func TestConfigFromEnv_Defaults(t *testing.T) {
-	// Clear env vars
-	os.Unsetenv("DISCOVERY_INTERNAL")
-	os.Unsetenv("RELAY_LIST")
-	os.Unsetenv("DISCOVERY_EXTERNAL")
-	os.Unsetenv("USE_CLOISTR_FALLBACK")
-	os.Unsetenv("RELAY_PREFS_CACHE_TTL")
+	// Empty is treated the same as unset; t.Setenv restores the original after the test.
+	t.Setenv("DISCOVERY_INTERNAL", "")
+	t.Setenv("RELAY_LIST", "")
+	t.Setenv("DISCOVERY_EXTERNAL", "")
+	t.Setenv("USE_CLOISTR_FALLBACK", "")
+	t.Setenv("RELAY_PREFS_CACHE_TTL", "")
 
 	cfg := ConfigFromEnv()
 
