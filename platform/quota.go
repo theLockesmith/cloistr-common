@@ -152,8 +152,8 @@ func (c *Client) RecordUsage(ctx context.Context, pubkey string, quotaType strin
 // so a decrement (release) never drives a component negative. A single UPSERT — no
 // transaction needed.
 //
-// NOTE: the pubkey must already have a users row (FK on user_quota_usage). Services
-// route auth through cloistr-me, which auto-provisions the users row on first touch.
+// NOTE: the pubkey must already have a users row (FK on user_quota_usage). Call
+// EnsureUser first; keys that never touch cloistr-me have no row otherwise.
 func (c *Client) recordUsagePlatform(ctx context.Context, pubkey string, quotaType string, amount int64) error {
 	_, err := c.db.ExecContext(ctx, `
 		INSERT INTO user_quota_usage (pubkey, quota_type_id, service, bytes, updated_at)
