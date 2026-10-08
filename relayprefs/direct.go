@@ -28,7 +28,7 @@ func queryRelayForCloistrPrefs(ctx context.Context, relayURL, pubkey string) (*R
 	if err != nil {
 		return nil, fmt.Errorf("connecting to relay: %w", err)
 	}
-	defer relay.Close()
+	defer func() { _ = relay.Close() }()
 
 	// Query for kind:30078 with d-tag "cloistr-relays"
 	filter := nostr.Filter{
@@ -61,7 +61,7 @@ func queryRelayForNIP65(ctx context.Context, relayURL, pubkey string) (*RelayPre
 	if err != nil {
 		return nil, fmt.Errorf("connecting to relay: %w", err)
 	}
-	defer relay.Close()
+	defer func() { _ = relay.Close() }()
 
 	filter := nostr.Filter{
 		Authors: []string{pubkey},

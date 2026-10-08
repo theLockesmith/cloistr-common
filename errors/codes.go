@@ -6,34 +6,34 @@ package errors
 
 // Authentication and authorization errors (AUTH_*)
 const (
-	CodeAuthRequired       = "AUTH_REQUIRED"
-	CodeAuthInvalid        = "AUTH_INVALID"
-	CodeAuthExpired        = "AUTH_EXPIRED"
-	CodeAccessDenied       = "ACCESS_DENIED"
-	CodeNotAdmin           = "NOT_ADMIN"
-	CodeUserDisabled       = "USER_DISABLED"
-	CodeUserNotFound       = "USER_NOT_FOUND"
-	CodeSignatureInvalid   = "SIGNATURE_INVALID"
-	CodeSignatureExpired   = "SIGNATURE_EXPIRED"
-	CodeNIP46Error         = "NIP46_ERROR"
-	CodeNIP46Timeout       = "NIP46_TIMEOUT"
-	CodeNIP46Rejected      = "NIP46_REJECTED"
+	CodeAuthRequired     = "AUTH_REQUIRED"
+	CodeAuthInvalid      = "AUTH_INVALID"
+	CodeAuthExpired      = "AUTH_EXPIRED"
+	CodeAccessDenied     = "ACCESS_DENIED"
+	CodeNotAdmin         = "NOT_ADMIN"
+	CodeUserDisabled     = "USER_DISABLED"
+	CodeUserNotFound     = "USER_NOT_FOUND"
+	CodeSignatureInvalid = "SIGNATURE_INVALID"
+	CodeSignatureExpired = "SIGNATURE_EXPIRED"
+	CodeNIP46Error       = "NIP46_ERROR"
+	CodeNIP46Timeout     = "NIP46_TIMEOUT"
+	CodeNIP46Rejected    = "NIP46_REJECTED"
 )
 
 // Quota and rate limiting errors (QUOTA_*, RATE_*)
 const (
-	CodeQuotaExceeded      = "QUOTA_EXCEEDED"
-	CodeStorageFull        = "STORAGE_FULL"
-	CodeRateLimitExceeded  = "RATE_LIMIT_EXCEEDED"
-	CodeRequestTooLarge    = "REQUEST_TOO_LARGE"
+	CodeQuotaExceeded     = "QUOTA_EXCEEDED"
+	CodeStorageFull       = "STORAGE_FULL"
+	CodeRateLimitExceeded = "RATE_LIMIT_EXCEEDED"
+	CodeRequestTooLarge   = "REQUEST_TOO_LARGE"
 )
 
 // Resource errors (RESOURCE_*)
 const (
-	CodeResourceNotFound   = "RESOURCE_NOT_FOUND"
-	CodeResourceExists     = "RESOURCE_EXISTS"
-	CodeResourceConflict   = "RESOURCE_CONFLICT"
-	CodeResourceLocked     = "RESOURCE_LOCKED"
+	CodeResourceNotFound = "RESOURCE_NOT_FOUND"
+	CodeResourceExists   = "RESOURCE_EXISTS"
+	CodeResourceConflict = "RESOURCE_CONFLICT"
+	CodeResourceLocked   = "RESOURCE_LOCKED"
 )
 
 // Storage errors (STORAGE_*)
@@ -47,19 +47,19 @@ const (
 
 // Validation errors (VALIDATION_*)
 const (
-	CodeValidationFailed   = "VALIDATION_FAILED"
-	CodeInvalidInput       = "INVALID_INPUT"
-	CodeInvalidFormat      = "INVALID_FORMAT"
-	CodeMissingField       = "MISSING_FIELD"
-	CodeInvalidPubkey      = "INVALID_PUBKEY"
+	CodeValidationFailed = "VALIDATION_FAILED"
+	CodeInvalidInput     = "INVALID_INPUT"
+	CodeInvalidFormat    = "INVALID_FORMAT"
+	CodeMissingField     = "MISSING_FIELD"
+	CodeInvalidPubkey    = "INVALID_PUBKEY"
 )
 
 // Relay errors (RELAY_*)
 const (
-	CodeRelayError         = "RELAY_ERROR"
-	CodeRelayTimeout       = "RELAY_TIMEOUT"
-	CodeRelayUnavailable   = "RELAY_UNAVAILABLE"
-	CodeEventRejected      = "EVENT_REJECTED"
+	CodeRelayError       = "RELAY_ERROR"
+	CodeRelayTimeout     = "RELAY_TIMEOUT"
+	CodeRelayUnavailable = "RELAY_UNAVAILABLE"
+	CodeEventRejected    = "EVENT_REJECTED"
 )
 
 // Service errors (SERVICE_*)

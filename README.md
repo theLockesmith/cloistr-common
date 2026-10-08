@@ -19,8 +19,12 @@ go get git.aegis-hq.xyz/coldforge/cloistr-common
 ```go
 import "git.aegis-hq.xyz/coldforge/cloistr-common/relayprefs"
 
-// Create client from environment variables
-client := relayprefs.NewClientFromEnv()
+// Create client from environment variables. Refuse to start on error:
+// it names the missing variable.
+client, err := relayprefs.NewClientFromEnv()
+if err != nil {
+    log.Fatal(err)
+}
 
 // Get user's relay preferences
 prefs, err := client.GetRelayPrefs(ctx, userPubkey)
@@ -43,8 +47,14 @@ Configure via environment variables:
 | `DISCOVERY_INTERNAL` | Self-hosted discovery URL | `http://my-discovery:8080` |
 | `RELAY_LIST` | Comma-separated relays for direct query | `wss://my-relay.com,wss://backup.com` |
 | `DISCOVERY_EXTERNAL` | Third-party discovery URL | `https://some-discovery.com` |
-| `USE_CLOISTR_FALLBACK` | Use Cloistr services as fallback | `true` (default) |
+| `USE_CLOISTR_FALLBACK` | Use Cloistr services as fallback. **Required**, `true` or `false` | `true` |
+| `RELAYPREFS_CLOISTR_DISCOVERY` | Cloistr discovery URL. **Required** when fallback is `true` | `https://discover.cloistr.xyz` |
+| `RELAYPREFS_CLOISTR_RELAY` | Cloistr relay URL, also the last-resort default relay. **Required** when fallback is `true` | `wss://relay.cloistr.xyz` |
 | `RELAY_PREFS_CACHE_TTL` | Cache duration | `1h` (default) |
+
+Since v0.4.0 there are no built-in Cloistr URLs. An unset required variable makes
+`NewClientFromEnv` return an error naming it, so a new environment can no longer
+silently talk to production.
 
 #### Query Chain
 
@@ -54,8 +64,8 @@ The library queries sources in this order:
 2. `DISCOVERY_INTERNAL` (if configured)
 3. `RELAY_LIST` (if configured) - direct relay queries
 4. `DISCOVERY_EXTERNAL` (if configured)
-5. `discover.cloistr.xyz` (if `USE_CLOISTR_FALLBACK=true`)
-6. `relay.cloistr.xyz` (if `USE_CLOISTR_FALLBACK=true`)
+5. `RELAYPREFS_CLOISTR_DISCOVERY` (if `USE_CLOISTR_FALLBACK=true`)
+6. `RELAYPREFS_CLOISTR_RELAY` (if `USE_CLOISTR_FALLBACK=true`)
 
 If no `cloistr-relays` event (kind:30078) is found, falls back to NIP-65 (kind:10002), then configured defaults.
 
@@ -70,7 +80,7 @@ export DISCOVERY_INTERNAL=http://my-discovery:8080
 # Or query relays directly
 export RELAY_LIST=wss://my-relay.com
 
-# Optionally disable Cloistr fallback entirely
+# Disable Cloistr fallback entirely (USE_CLOISTR_FALLBACK must be set either way)
 export USE_CLOISTR_FALLBACK=false
 ```
 

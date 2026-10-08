@@ -10,18 +10,18 @@ func TestIsValid(t *testing.T) {
 		name string
 		want bool
 	}{
-		{"ab", true},              // min length 2
-		{"robertpaulson", true},   // typical
-		{"a_b-c", true},           // underscore + hyphen allowed
+		{"ab", true},               // min length 2
+		{"robertpaulson", true},    // typical
+		{"a_b-c", true},            // underscore + hyphen allowed
 		{"happy-otter-1234", true}, // auto-assigned shape is still valid format
 		{"user123", true},
-		{"a", false},                     // too short (1)
-		{"", false},                      // empty
-		{"AB", false},                    // uppercase
-		{"user name", false},             // space
-		{"user.name", false},             // dot
-		{"user@host", false},             // at-sign
-		{"héllo", false},                 // non-ascii
+		{"a", false},                      // too short (1)
+		{"", false},                       // empty
+		{"AB", false},                     // uppercase
+		{"user name", false},              // space
+		{"user.name", false},              // dot
+		{"user@host", false},              // at-sign
+		{"héllo", false},                  // non-ascii
 		{string(make([]byte, 51)), false}, // way too long (also null bytes)
 	}
 	for _, c := range cases {
@@ -50,15 +50,15 @@ func TestIsAutoAssigned(t *testing.T) {
 		{"happy-otter-1234", true},
 		{"golden-falcon-9999", true},
 		{"a-b-0000", true},
-		{"happy-otter-123", false},   // 3 digits
-		{"happy-otter-12345", false}, // 5 digits
-		{"happy_otter_1234", false},  // underscores not hyphens
-		{"happyotter1234", false},    // no separators
-		{"happy-otter", false},       // no number
-		{"happy-otter-abcd", false},  // letters not digits
-		{"1happy-otter-1234", false}, // leading digit in adjective slot
+		{"happy-otter-123", false},      // 3 digits
+		{"happy-otter-12345", false},    // 5 digits
+		{"happy_otter_1234", false},     // underscores not hyphens
+		{"happyotter1234", false},       // no separators
+		{"happy-otter", false},          // no number
+		{"happy-otter-abcd", false},     // letters not digits
+		{"1happy-otter-1234", false},    // leading digit in adjective slot
 		{"happy-otter-cub-1234", false}, // extra segment
-		{"robertpaulson", false},     // a real human name
+		{"robertpaulson", false},        // a real human name
 	}
 	for _, c := range cases {
 		if got := IsAutoAssigned(c.name); got != c.want {

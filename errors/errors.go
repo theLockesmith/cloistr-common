@@ -79,7 +79,8 @@ func (e *APIError) WriteResponse(w http.ResponseWriter) {
 		w.Header().Set("Retry-After", strconv.Itoa(e.RetryAfter))
 	}
 	w.WriteHeader(e.HTTPStatus)
-	w.Write(e.JSON())
+	// Headers are already sent; a failed body write has no one left to report to.
+	_, _ = w.Write(e.JSON())
 }
 
 // New creates a new APIError with the given code, message, and HTTP status.
