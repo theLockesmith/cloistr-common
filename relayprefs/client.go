@@ -25,9 +25,14 @@ func NewClient(cfg Config) *Client {
 }
 
 // NewClientFromEnv creates a new client configured from environment variables.
-// See ConfigFromEnv for the list of supported environment variables.
-func NewClientFromEnv() *Client {
-	return NewClient(ConfigFromEnv())
+// See ConfigFromEnv for the list of supported environment variables. It returns
+// an error naming the variable when a required one is missing.
+func NewClientFromEnv() (*Client, error) {
+	cfg, err := ConfigFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	return NewClient(cfg), nil
 }
 
 // GetRelayPrefs retrieves relay preferences for a pubkey.
@@ -37,8 +42,8 @@ func NewClientFromEnv() *Client {
 //  2. DISCOVERY_INTERNAL (if configured)
 //  3. RELAY_LIST (if configured) - direct relay query for kind:30078
 //  4. DISCOVERY_EXTERNAL (if configured)
-//  5. discover.cloistr.xyz (if UseCloistrFallback=true)
-//  6. relay.cloistr.xyz (if UseCloistrFallback=true)
+//  5. CloistrDiscovery (if UseCloistrFallback=true)
+//  6. CloistrRelay (if UseCloistrFallback=true)
 //
 // If no cloistr-relays event is found, falls back to NIP-65, then config defaults.
 func (c *Client) GetRelayPrefs(ctx context.Context, pubkey string) (*RelayPrefs, error) {
@@ -118,26 +123,33 @@ func (c *Client) queryChain(ctx context.Context, pubkey string, cloistrRelays bo
 	}
 
 	// 5 & 6. Cloistr fallback
+	// An empty URL is skipped, so a Config built in code without the Cloistr
+	// URLs never reaches a hardcoded host.
 	if c.config.UseCloistrFallback {
 		// Try Cloistr discovery first (faster)
-		prefs, err := queryDiscovery(ctx, DefaultCloistrDiscovery, pubkey)
-		if err != nil {
-			log.Printf("relayprefs: cloistr discovery error: %v", err)
-		} else if prefs != nil {
-			return prefs, nil
+		if c.config.CloistrDiscovery != "" {
+			prefs, err := queryDiscovery(ctx, c.config.CloistrDiscovery, pubkey)
+			if err != nil {
+				log.Printf("relayprefs: cloistr discovery error: %v", err)
+			} else if prefs != nil {
+				return prefs, nil
+			}
 		}
 
 		// Fall back to direct relay query
-		var queryErr error
-		if cloistrRelays {
-			prefs, queryErr = queryRelayForCloistrPrefs(ctx, DefaultCloistrRelay, pubkey)
-		} else {
-			prefs, queryErr = queryRelayForNIP65(ctx, DefaultCloistrRelay, pubkey)
-		}
-		if queryErr != nil {
-			log.Printf("relayprefs: cloistr relay error: %v", queryErr)
-		} else if prefs != nil {
-			return prefs, nil
+		if c.config.CloistrRelay != "" {
+			var prefs *RelayPrefs
+			var queryErr error
+			if cloistrRelays {
+				prefs, queryErr = queryRelayForCloistrPrefs(ctx, c.config.CloistrRelay, pubkey)
+			} else {
+				prefs, queryErr = queryRelayForNIP65(ctx, c.config.CloistrRelay, pubkey)
+			}
+			if queryErr != nil {
+				log.Printf("relayprefs: cloistr relay error: %v", queryErr)
+			} else if prefs != nil {
+				return prefs, nil
+			}
 		}
 	}
 
@@ -165,9 +177,9 @@ func (c *Client) defaultPrefs(pubkey string) *RelayPrefs {
 	}
 
 	// Otherwise use Cloistr relay if fallback enabled
-	if c.config.UseCloistrFallback {
+	if c.config.UseCloistrFallback && c.config.CloistrRelay != "" {
 		prefs.Relays = []RelayConfig{
-			{URL: DefaultCloistrRelay, Read: true, Write: true},
+			{URL: c.config.CloistrRelay, Read: true, Write: true},
 		}
 		return prefs
 	}
@@ -194,8 +206,12 @@ func (c *Client) Config() Config {
 }
 
 // Validate checks that the client can actually query for preferences.
-// Returns an error if no query sources are configured and Cloistr fallback is disabled.
+// Returns an error if the Cloistr fallback is enabled without its URLs, or if no
+// query sources are configured and Cloistr fallback is disabled.
 func (c *Client) Validate() error {
+	if err := c.config.Validate(); err != nil {
+		return err
+	}
 	if !c.config.HasQuerySources() && !c.config.UseCloistrFallback {
 		return fmt.Errorf("no relay preference sources configured and Cloistr fallback disabled")
 	}
