@@ -2,7 +2,10 @@ module git.aegis-hq.xyz/coldforge/cloistr-common
 
 go 1.26.6
 
-require github.com/nbd-wtf/go-nostr v0.52.3
+require (
+	github.com/coder/websocket v1.8.14
+	github.com/nbd-wtf/go-nostr v0.52.3
+)
 
 require (
 	github.com/ImVexed/fasturl v0.0.0-20230304231329-4e41488060f3 // indirect
@@ -12,7 +15,6 @@ require (
 	github.com/bytedance/sonic v1.14.2 // indirect
 	github.com/bytedance/sonic/loader v0.4.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
-	github.com/coder/websocket v1.8.14 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/decred/dcrd/crypto/blake256 v1.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect

@@ -202,6 +202,38 @@ err.WriteResponse(w)
 - **Storage:** `STORAGE_TIMEOUT`, `STORAGE_ERROR`, `UPLOAD_FAILED`
 - **Validation:** `VALIDATION_FAILED`, `INVALID_INPUT`, `INVALID_PUBKEY`
 
+### crypto
+
+NIP-44/NIP-04 encryption and the `Signer` interface, which hides who holds the
+user's key: `LocalSigner` (key in process), `NIP46Signer` (a remote signer, or
+"bunker", over NIP-46), or `ClientSideSigner` (the browser does it, NIP-07).
+
+#### NIP46Signer
+
+```go
+import "git.aegis-hq.xyz/coldforge/cloistr-common/crypto"
+
+ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+defer cancel()
+// clientSK: this service's own NIP-46 client key. Keep it stable across
+// restarts; bunkers authorize a client key, and the secret may be single-use.
+signer, err := crypto.ConnectNIP46Signer(ctx, clientSK,
+    "bunker://<remote-signer-pubkey>?relay=wss://relay.example&secret=<secret>")
+if err != nil {
+    log.Fatal(err)
+}
+defer signer.Close()
+
+signer.PublicKey()                    // the user's key, fetched at connect
+signer.SignEvent(ctx, &evt)           // checked: right key, right event, valid signature
+signer.Encrypt(ctx, crypto.SchemeNIP44, plaintext, recipientPK)
+signer.Decrypt(ctx, crypto.SchemeNIP44, ciphertext, senderPK)
+```
+
+Only `bunker://` URLs are accepted (not NIP-05 names or `nostrconnect://`). A
+bunker that answers with an `auth_url` challenge makes the call fail with that
+URL in the error; a backend cannot open it for the user.
+
 ## License
 
 AGPL-3.0
